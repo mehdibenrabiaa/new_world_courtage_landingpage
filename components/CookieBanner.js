@@ -99,7 +99,7 @@ export function CookiePreferencesPanel({ analytics, marketing, setAnalytics, set
     <div className="flex flex-col gap-4">
       <p className="text-base text-gray-500 leading-relaxed">
         Choisissez les catégories de cookies que vous souhaitez autoriser. Votre choix sera conservé 13 mois.{" "}
-        <Link href="/confidentialite/" onClick={onClose} className="text-[var(--color-brand)] hover:underline">Politique de confidentialité</Link>
+        <Link href="/confidentialite/" target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">Politique de confidentialité</Link>
       </p>
 
       <div className="flex flex-col gap-3">

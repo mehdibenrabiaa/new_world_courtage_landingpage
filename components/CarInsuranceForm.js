@@ -208,7 +208,7 @@ function clearStoredProgress(key) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, storageKey }) {
+export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, onStepComplete, storageKey }) {
   const [stepIdx, setStepIdx] = useState(startStep);
   const [direction, setDirection] = useState("next");
   const [answers, setAnswers] = useState(initialAnswers);
@@ -280,6 +280,7 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
 
     setErrors({});
     setDirection("next");
+    onStepComplete?.(step.id, answers);
     const next = findVisibleStepIndex(steps, stepIdx + 1, 1, answers);
     if (next >= steps.length) {
       clearStoredProgress(storageKey);
@@ -301,11 +302,13 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
   function selectAndAdvance(stepId, val) {
     const nextAnswers = { ...answers, [stepId]: val };
     setAnswer(stepId, val);
+    onStepComplete?.(stepId, nextAnswers);
     setTimeout(() => {
       const next = findVisibleStepIndex(steps, stepIdx + 1, 1, nextAnswers);
       if (next >= steps.length) {
         clearStoredProgress(storageKey);
         setSubmitted(true);
+        onSubmit?.(nextAnswers);
       } else {
         setDirection("next");
         setStepIdx(next);

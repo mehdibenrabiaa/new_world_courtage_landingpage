@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import CarInsuranceForm from "@/components/CarInsuranceForm";
 import ContactPopover from "@/components/ContactPopover";
+import { submitLead } from "@/lib/api";
+import { getOrCreateLeadUid } from "@/lib/leadUid";
 
 const BONUS_MALUS_STEP_OPTIONS = {
   options: [
@@ -72,9 +74,12 @@ export default function DevisVtcPage() {
   const router = useRouter();
   const [steps, setSteps] = useState(null);
   const [initialAnswers, setInitialAnswers] = useState({});
+  const leadUidRef = useRef(null);
+  const partialSentRef = useRef(false);
 
   useEffect(() => {
     if (!router.isReady) return;
+    leadUidRef.current = getOrCreateLeadUid("landing-vtc");
     const { name, phone } = router.query;
     const prefixSteps = [];
     const answers = {};
@@ -82,7 +87,45 @@ export default function DevisVtcPage() {
     if (!phone) prefixSteps.push(PHONE_STEP); else answers.phone = phone;
     setSteps([...prefixSteps, ...VTC_BASE_STEPS]);
     setInitialAnswers(answers);
+
+    // Already known from the landing form (no in-form name/phone steps to
+    // complete) — save the partial lead right away instead of waiting for
+    // a step-completion event that will never fire for "name"/"phone".
+    if (name && phone) savePartial(answers);
   }, [router.isReady]);
+
+  // As soon as name+phone are both known (whether pre-filled from the
+  // landing form or just typed in-form), save a partial lead so we still
+  // have contact info even if the user abandons the rest of the form.
+  function savePartial(answers) {
+    if (partialSentRef.current || !answers.name || !answers.phone) return;
+    partialSentRef.current = true;
+    submitLead({
+      leadUid: leadUidRef.current,
+      name: answers.name,
+      phone: answers.phone,
+      insuranceType: "vtc",
+      answers,
+      sourcePath: router.pathname,
+      completed: false,
+    }).catch(() => {});
+  }
+
+  function handleStepComplete(stepId, answers) {
+    if (stepId === "name" || stepId === "phone") savePartial(answers);
+  }
+
+  function handleSubmit(answers) {
+    submitLead({
+      leadUid: leadUidRef.current,
+      name: answers.name,
+      phone: answers.phone,
+      insuranceType: "vtc",
+      answers,
+      sourcePath: router.pathname,
+      completed: true,
+    }).catch(() => {});
+  }
 
   return (
     <>
@@ -112,6 +155,8 @@ export default function DevisVtcPage() {
               initialAnswers={initialAnswers}
               theme="light"
               storageKey="landing-vtc"
+              onSubmit={handleSubmit}
+              onStepComplete={handleStepComplete}
             />
           )}
         </div>

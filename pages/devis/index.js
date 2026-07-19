@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import CarInsuranceForm from "@/components/CarInsuranceForm";
 import ContactPopover from "@/components/ContactPopover";
-import { fetchQuestionnaire } from "@/lib/api";
+import { fetchQuestionnaire, submitLead } from "@/lib/api";
+import { getOrCreateLeadUid } from "@/lib/leadUid";
 
 function bucketBonusMalus(raw) {
   const n = parseFloat(raw);
@@ -46,9 +47,11 @@ export default function DevisPage() {
   const [steps, setSteps] = useState(null);
   const [initialAnswers, setInitialAnswers] = useState({});
   const [error, setError] = useState(null);
+  const leadUidRef = useRef(null);
 
   useEffect(() => {
     if (!router.isReady) return;
+    leadUidRef.current = getOrCreateLeadUid("landing-taxi");
     fetchQuestionnaire("taxi")
       .then((fetchedSteps) => {
         const answers = buildInitialAnswers(fetchedSteps, router.query);
@@ -59,9 +62,36 @@ export default function DevisPage() {
           setSteps([INSURANCE_TYPE_STEP, ...fetchedSteps]);
         }
         setInitialAnswers(answers);
+
+        // name/phone always arrive via the URL on this page (never asked
+        // in-form) — save a partial lead right away so we have contact info
+        // even if the user abandons the rest of the questionnaire.
+        if (router.query.name && router.query.phone) {
+          submitLead({
+            leadUid: leadUidRef.current,
+            name: router.query.name,
+            phone: router.query.phone,
+            insuranceType: router.query.insuranceType,
+            answers,
+            sourcePath: router.pathname,
+            completed: false,
+          }).catch(() => {});
+        }
       })
       .catch((err) => setError(err.message));
   }, [router.isReady]);
+
+  function handleSubmit(answers) {
+    submitLead({
+      leadUid: leadUidRef.current,
+      name: router.query.name,
+      phone: router.query.phone,
+      insuranceType: answers.insurance_type,
+      answers,
+      sourcePath: router.pathname,
+      completed: true,
+    }).catch(() => {});
+  }
 
   return (
     <>
@@ -96,6 +126,7 @@ export default function DevisPage() {
               initialAnswers={initialAnswers}
               theme="light"
               storageKey="landing-taxi"
+              onSubmit={handleSubmit}
             />
           )}
         </div>
