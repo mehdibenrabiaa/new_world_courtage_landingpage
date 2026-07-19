@@ -20,7 +20,17 @@ const BONUS_MALUS_STEP_OPTIONS = {
   values: ["0.50", "0.51-0.79", "0.80-0.99", "1.00", "1.01-1.25", "1.26-2.00", "2.01-3.50"],
 };
 
+const VEHICLE_COUNT_STEP = {
+  id: "nombre_vehicules",
+  type: "radio",
+  card: true,
+  question: "Souhaitez-vous assurer :",
+  options: ["Un seul véhicule", "Une flotte de véhicules"],
+  values: ["un_seul", "flotte"],
+};
+
 const VTC_BASE_STEPS = [
+  VEHICLE_COUNT_STEP,
   {
     id: "immat",
     type: "input",
@@ -28,6 +38,7 @@ const VTC_BASE_STEPS = [
     uppercase: true,
     question: "Votre plaque d'immatriculation ?",
     placeholder: "Ex : AB-123-CD",
+    rules: [{ action: "skip", source_question_id: "nombre_vehicules", operator: "equals", value: "flotte" }],
   },
   {
     id: "bonus_malus",
