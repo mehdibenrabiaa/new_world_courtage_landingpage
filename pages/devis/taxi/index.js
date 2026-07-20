@@ -190,6 +190,11 @@ export default function DevisTaxiPage() {
       <Head>
         <title>Votre devis assurance taxi — New World Courtage</title>
         <meta name="robots" content="noindex" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="New World Courtage" />
+        <meta property="og:title" content="Votre devis assurance taxi — New World Courtage" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Votre devis assurance taxi — New World Courtage" />
       </Head>
 
       <header

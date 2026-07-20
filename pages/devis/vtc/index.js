@@ -189,6 +189,11 @@ export default function DevisVtcPage() {
       <Head>
         <title>Votre devis assurance VTC — New World Courtage</title>
         <meta name="robots" content="noindex" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="New World Courtage" />
+        <meta property="og:title" content="Votre devis assurance VTC — New World Courtage" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Votre devis assurance VTC — New World Courtage" />
       </Head>
 
       <header

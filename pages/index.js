@@ -35,6 +35,20 @@ export default function LandingPage() {
         />
         {/* Ad-traffic-only page — keep it out of search results so it doesn't compete with the main site. */}
         <meta name="robots" content="noindex" />
+        {/* Link-preview tags — matters when a lead forwards this URL to someone else over WhatsApp/Messenger. */}
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="New World Courtage" />
+        <meta property="og:title" content="Devis gratuit en 2 minutes | New World Courtage" />
+        <meta
+          property="og:description"
+          content="Recevez votre devis d'assurance gratuitement, sans engagement. 0 frais, 0 commission."
+        />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Devis gratuit en 2 minutes | New World Courtage" />
+        <meta
+          name="twitter:description"
+          content="Recevez votre devis d'assurance gratuitement, sans engagement. 0 frais, 0 commission."
+        />
       </Head>
 
       <header className="w-full">

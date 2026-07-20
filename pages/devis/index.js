@@ -59,6 +59,11 @@ export default function DevisDispatcherPage() {
       <Head>
         <title>Votre devis d&apos;assurance — New World Courtage</title>
         <meta name="robots" content="noindex" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="New World Courtage" />
+        <meta property="og:title" content="Votre devis d'assurance — New World Courtage" />
+        <meta name="twitter:card" content="summary" />
+        <meta name="twitter:title" content="Votre devis d'assurance — New World Courtage" />
       </Head>
 
       <header
