@@ -17,6 +17,7 @@ const INSURANCE_TYPES = [
 // here fall back to `redirectTo`.
 const DEVIS_PATH_BY_TYPE = {
   vtc: "/devis/vtc/",
+  poids_lourd: "/devis/poidslourds/",
 };
 
 function readStorage() {

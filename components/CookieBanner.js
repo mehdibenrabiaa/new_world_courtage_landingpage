@@ -8,7 +8,7 @@ import { getConsent, saveConsent } from "@/lib/consent";
 
 // ── Replace with your actual tracking IDs ────────────────────────────────────
 const GA_ID         = "G-XXXXXXXXXX";
-const CLARITY_ID    = "XXXXXXXXXX";
+const CLARITY_ID    = "xpcjl7xh6u";
 const META_PIXEL_ID = "XXXXXXXXXXXXXXX";
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -174,6 +174,11 @@ export default function CookieBanner() {
   }
 
   useEffect(() => {
+    // Records every session regardless of cookie choice — the banner below
+    // still runs for GA/Meta Pixel consent, but Clarity is exempted from
+    // that gate per explicit decision.
+    injectClarity(CLARITY_ID);
+
     const consent = getConsent();
     if (consent) {
       setHasConsent(true);

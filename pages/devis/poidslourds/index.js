@@ -7,15 +7,6 @@ import ContactPopover from "@/components/ContactPopover";
 import { submitLead } from "@/lib/api";
 import { getOrCreateLeadUid } from "@/lib/leadUid";
 
-const INSURANCE_TYPE_STEP = {
-  id: "insurance_type",
-  type: "radio",
-  card: true,
-  question: "Quel type d'assurance recherchez-vous ?",
-  options: ["Poids lourd", "VTC", "Taxi"],
-  values: ["poids_lourd", "vtc", "taxi"],
-};
-
 const BONUS_MALUS_STEP_OPTIONS = {
   options: ["Bonus (moins de 1.00)", "1.00 — Référence", "Malus (plus de 1.00)", "Je ne sais pas"],
   values: ["bonus", "1.00", "malus", "unknown"],
@@ -28,6 +19,22 @@ const VEHICLE_COUNT_STEP = {
   question: "Souhaitez-vous assurer :",
   options: ["Un seul véhicule", "Une flotte de véhicules"],
   values: ["un_seul", "flotte"],
+};
+
+const NAME_STEP = {
+  id: "name",
+  type: "input",
+  inputType: "text",
+  question: "Quel est votre nom complet ?",
+  placeholder: "Ex : Jean Dupont",
+};
+
+const PHONE_STEP = {
+  id: "phone",
+  type: "input",
+  inputType: "tel",
+  question: "Quel est votre numéro de téléphone ?",
+  placeholder: "Ex : 06 12 34 56 78",
 };
 
 // A fleet has more than one driver/vehicle, so the per-driver, per-vehicle
@@ -69,7 +76,7 @@ const FLEET_DETAIL_STEPS = [
 
 // Ordered cheapest-to-answer first, most likely to require digging up a
 // document (immatriculation) last — minimizes drop-off before capture.
-const TAXI_DETAIL_STEPS = [
+const POIDS_LOURD_DETAIL_STEPS = [
   {
     id: "permis_anciennete",
     type: "radio",
@@ -107,70 +114,62 @@ const TAXI_DETAIL_STEPS = [
   },
 ];
 
-// Hardcoded taxi questionnaire (not DB-driven, same approach as /devis/vtc).
-export default function DevisPage() {
+// Hardcoded poids lourd questionnaire (not DB-driven, same approach as
+// /devis/vtc). If name/phone weren't already captured on the landing page,
+// ask them right after the vehicle-count question — early enough to still
+// capture a partial lead from almost everyone who engages, without leading
+// cold with a personal-info ask.
+export default function DevisPoidsLourdsPage() {
   const router = useRouter();
   const [steps, setSteps] = useState(null);
   const [initialAnswers, setInitialAnswers] = useState({});
   const leadUidRef = useRef(null);
+  const partialSentRef = useRef(false);
 
   useEffect(() => {
     if (!router.isReady) return;
-    leadUidRef.current = getOrCreateLeadUid("landing-taxi");
-
+    leadUidRef.current = getOrCreateLeadUid("landing-poidslourds");
+    const { name, phone } = router.query;
+    const contactSteps = [];
     const answers = {};
-    const prefixSteps = [];
-    if (router.query.insuranceType) {
-      answers.insurance_type = router.query.insuranceType;
-    } else {
-      prefixSteps.push(INSURANCE_TYPE_STEP);
-    }
-    setSteps([...prefixSteps, VEHICLE_COUNT_STEP, ...FLEET_DETAIL_STEPS, ...TAXI_DETAIL_STEPS]);
+    if (!name) contactSteps.push(NAME_STEP); else answers.name = name;
+    if (!phone) contactSteps.push(PHONE_STEP); else answers.phone = phone;
+    setSteps([VEHICLE_COUNT_STEP, ...contactSteps, ...FLEET_DETAIL_STEPS, ...POIDS_LOURD_DETAIL_STEPS]);
     setInitialAnswers(answers);
 
-    // name/phone always arrive via the URL on this page (never asked
-    // in-form) — save a partial lead right away so we have contact info
-    // even if the user abandons the rest of the questionnaire.
-    if (router.query.name && router.query.phone) {
-      submitLead({
-        leadUid: leadUidRef.current,
-        name: router.query.name,
-        phone: router.query.phone,
-        insuranceType: router.query.insuranceType,
-        answers,
-        sourcePath: router.pathname,
-        completed: false,
-      }).catch(() => {});
-    }
+    // Already known from the landing form (no in-form name/phone steps to
+    // complete) — save the partial lead right away instead of waiting for
+    // a step-completion event that will never fire for "name"/"phone".
+    if (name && phone) savePartial(answers);
   }, [router.isReady]);
 
-  // This page's questions are taxi-flavored — if they pick VTC or Poids lourd
-  // here, send them to that type's dedicated flow instead of continuing here.
-  const REDIRECT_PATH_BY_TYPE = { vtc: "/devis/vtc/", poids_lourd: "/devis/poidslourds/" };
+  // As soon as name+phone are both known (whether pre-filled from the
+  // landing form or just typed in-form), save a partial lead so we still
+  // have contact info even if the user abandons the rest of the form.
+  function savePartial(answers) {
+    if (partialSentRef.current || !answers.name || !answers.phone) return;
+    partialSentRef.current = true;
+    submitLead({
+      leadUid: leadUidRef.current,
+      name: answers.name,
+      phone: answers.phone,
+      insuranceType: "poids_lourd",
+      answers,
+      sourcePath: router.pathname,
+      completed: false,
+    }).catch(() => {});
+  }
 
   function handleStepComplete(stepId, answers) {
-    const target = stepId === "insurance_type" ? REDIRECT_PATH_BY_TYPE[answers.insurance_type] : null;
-    if (!target) return false;
-    // Abandoning this questionnaire for the other one — clear its saved
-    // progress so a later "back" to this page starts fresh instead of
-    // resuming into a step past this question.
-    try {
-      localStorage.removeItem("nwc_car_form_landing-taxi");
-    } catch {}
-    const params = {};
-    if (router.query.name) params.name = router.query.name;
-    if (router.query.phone) params.phone = router.query.phone;
-    const qs = new URLSearchParams(params).toString();
-    router.push(`${target}${qs ? `?${qs}` : ""}`);
-    return true; // halt CarInsuranceForm's own local auto-advance
+    if (stepId === "name" || stepId === "phone") savePartial(answers);
   }
 
   function handleSubmit(answers) {
     submitLead({
       leadUid: leadUidRef.current,
-      name: router.query.name,
-      phone: router.query.phone,
-      insuranceType: answers.insurance_type,
+      name: answers.name,
+      phone: answers.phone,
+      insuranceType: "poids_lourd",
       answers,
       sourcePath: router.pathname,
       completed: true,
@@ -180,7 +179,7 @@ export default function DevisPage() {
   return (
     <>
       <Head>
-        <title>Votre devis assurance taxi — New World Courtage</title>
+        <title>Votre devis assurance poids lourd — New World Courtage</title>
         <meta name="robots" content="noindex" />
       </Head>
 
@@ -204,7 +203,7 @@ export default function DevisPage() {
               steps={steps}
               initialAnswers={initialAnswers}
               theme="light"
-              storageKey="landing-taxi"
+              storageKey="landing-poidslourds"
               onSubmit={handleSubmit}
               onStepComplete={handleStepComplete}
             />

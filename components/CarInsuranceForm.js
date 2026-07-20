@@ -241,12 +241,16 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
   // Resume from a previous visit: merge any saved progress under `answers`
   // (URL-derived initialAnswers still win on conflicts), jump back to the
   // step they'd reached, then re-check skip-logic in case rules changed.
+  // Resolved by step *id*, not raw array index — the question set gets
+  // reordered/edited over time, so an old numeric index would silently
+  // point at a different question after any such change.
   useEffect(() => {
     const saved = readStoredProgress(storageKey);
     const mergedAnswers = saved ? { ...saved.answers, ...initialAnswers } : initialAnswers;
     let targetStep = startStep;
-    if (saved && typeof saved.stepIdx === "number") {
-      targetStep = Math.max(startStep, Math.min(saved.stepIdx, steps.length - 1));
+    if (saved && saved.stepId !== undefined) {
+      const savedIdx = steps.findIndex(s => s.id === saved.stepId);
+      if (savedIdx >= 0) targetStep = Math.max(startStep, savedIdx);
     }
     if (isStepSkipped(steps[targetStep], mergedAnswers)) {
       targetStep = Math.min(findVisibleStepIndex(steps, targetStep + 1, 1, mergedAnswers), steps.length - 1);
@@ -261,8 +265,8 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
   // resumes where they left off instead of starting blank.
   useEffect(() => {
     if (!hydrated) return;
-    writeStoredProgress(storageKey, { answers, stepIdx });
-  }, [answers, stepIdx, storageKey, hydrated]);
+    writeStoredProgress(storageKey, { answers, stepId: step.id });
+  }, [answers, step.id, storageKey, hydrated]);
 
   function setAnswer(stepId, val) {
     setAnswers(prev => ({ ...prev, [stepId]: val }));
@@ -280,7 +284,7 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
 
     setErrors({});
     setDirection("next");
-    onStepComplete?.(step.id, answers);
+    if (onStepComplete?.(step.id, answers)) return;
     const next = findVisibleStepIndex(steps, stepIdx + 1, 1, answers);
     if (next >= steps.length) {
       clearStoredProgress(storageKey);
@@ -302,7 +306,10 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
   function selectAndAdvance(stepId, val) {
     const nextAnswers = { ...answers, [stepId]: val };
     setAnswer(stepId, val);
-    onStepComplete?.(stepId, nextAnswers);
+    // onStepComplete can return true to mean "I'm navigating away" — halts
+    // the local auto-advance below so it can't race a slow page transition
+    // and overwrite this step's saved progress after we've already left.
+    if (onStepComplete?.(stepId, nextAnswers)) return;
     setTimeout(() => {
       const next = findVisibleStepIndex(steps, stepIdx + 1, 1, nextAnswers);
       if (next >= steps.length) {
@@ -330,7 +337,7 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
         const dynamicOpts = step.optionsFn ? step.optionsFn(answers) : { options: step.options, values: step.values };
 
         return (
-          <div id="step-content" key={step.id} className={`flex flex-col gap-5 max-w-2xl ${direction === "next" ? "slide-in-right" : "slide-in-left"}`}>
+          <div id="step-content" key={step.id} className={`flex flex-col gap-5 max-w-3xl ${direction === "next" ? "slide-in-right" : "slide-in-left"}`}>
 
             {/* Eyebrow + big question */}
             <div className="flex flex-col gap-2">

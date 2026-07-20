@@ -8,16 +8,8 @@ import { submitLead } from "@/lib/api";
 import { getOrCreateLeadUid } from "@/lib/leadUid";
 
 const BONUS_MALUS_STEP_OPTIONS = {
-  options: [
-    "0.50 — Bonus maximum",
-    "0.51 – 0.79 — Bon conducteur",
-    "0.80 – 0.99 — Conducteur confirmé",
-    "1.00 — Référence",
-    "1.01 – 1.25 — Malus léger",
-    "1.26 – 2.00 — Malus modéré",
-    "2.01 – 3.50 — Malus élevé",
-  ],
-  values: ["0.50", "0.51-0.79", "0.80-0.99", "1.00", "1.01-1.25", "1.26-2.00", "2.01-3.50"],
+  options: ["Bonus (moins de 1.00)", "1.00 — Référence", "Malus (plus de 1.00)", "Je ne sais pas"],
+  values: ["bonus", "1.00", "malus", "unknown"],
 };
 
 const VEHICLE_COUNT_STEP = {
@@ -28,40 +20,6 @@ const VEHICLE_COUNT_STEP = {
   options: ["Un seul véhicule", "Une flotte de véhicules"],
   values: ["un_seul", "flotte"],
 };
-
-const VTC_BASE_STEPS = [
-  VEHICLE_COUNT_STEP,
-  {
-    id: "immat",
-    type: "input",
-    inputType: "text",
-    uppercase: true,
-    question: "Votre plaque d'immatriculation ?",
-    placeholder: "Ex : AB-123-CD",
-    rules: [{ action: "skip", source_question_id: "nombre_vehicules", operator: "equals", value: "flotte" }],
-  },
-  {
-    id: "bonus_malus",
-    type: "select",
-    question: "Votre coefficient bonus-malus ?",
-    options: BONUS_MALUS_STEP_OPTIONS.options,
-    values: BONUS_MALUS_STEP_OPTIONS.values,
-  },
-  {
-    id: "naissance",
-    type: "input",
-    inputType: "date-text",
-    question: "Quelle est votre date de naissance ?",
-  },
-  {
-    id: "permis_anciennete",
-    type: "radio",
-    card: true,
-    question: "Conduisez-vous depuis plus de 3 ans ?",
-    options: ["Oui, plus de 3 ans", "Non, moins de 3 ans"],
-    values: ["plus_3_ans", "moins_3_ans"],
-  },
-];
 
 const NAME_STEP = {
   id: "name",
@@ -79,8 +37,87 @@ const PHONE_STEP = {
   placeholder: "Ex : 06 12 34 56 78",
 };
 
+// A fleet has more than one driver/vehicle, so the per-driver, per-vehicle
+// questions below don't apply — skip straight past them to submission.
+const FLEET_SKIP_RULE = [{ action: "skip", source_question_id: "nombre_vehicules", operator: "equals", value: "flotte" }];
+// Inverse: these only make sense for a fleet, so solo-vehicle users skip them.
+const SOLO_SKIP_RULE = [{ action: "skip", source_question_id: "nombre_vehicules", operator: "not_equals", value: "flotte" }];
+
+// Fleet-only qualifying questions — cheap radio/select, no document lookups,
+// just enough for the advisor to size and prep the callback.
+const FLEET_DETAIL_STEPS = [
+  {
+    id: "flotte_taille",
+    type: "select",
+    question: "Combien de véhicules compte votre flotte ?",
+    options: ["2 à 5 véhicules", "6 à 10 véhicules", "11 à 20 véhicules", "Plus de 20 véhicules"],
+    values: ["2-5", "6-10", "11-20", "20+"],
+    rules: SOLO_SKIP_RULE,
+  },
+  {
+    id: "flotte_structure",
+    type: "radio",
+    card: true,
+    question: "Vous êtes :",
+    options: ["Auto-entrepreneur / Indépendant", "Société (SARL, SAS…)"],
+    values: ["independant", "societe"],
+    rules: SOLO_SKIP_RULE,
+  },
+  {
+    id: "flotte_deja_assure",
+    type: "radio",
+    card: true,
+    question: "Avez-vous déjà une assurance flotte actuellement ?",
+    options: ["Oui", "Non"],
+    values: ["oui", "non"],
+    rules: SOLO_SKIP_RULE,
+  },
+];
+
+// Ordered cheapest-to-answer first, most likely to require digging up a
+// document (immatriculation) last — minimizes drop-off before capture.
+const VTC_DETAIL_STEPS = [
+  {
+    id: "permis_anciennete",
+    type: "radio",
+    card: true,
+    question: "Conduisez-vous depuis plus de 3 ans ?",
+    options: ["Oui, plus de 3 ans", "Non, moins de 3 ans"],
+    values: ["plus_3_ans", "moins_3_ans"],
+    rules: FLEET_SKIP_RULE,
+  },
+  {
+    id: "naissance",
+    type: "input",
+    inputType: "date-text",
+    question: "Quelle est votre date de naissance ?",
+    optional: true,
+    rules: FLEET_SKIP_RULE,
+  },
+  {
+    id: "bonus_malus",
+    type: "select",
+    question: "Votre coefficient bonus-malus ?",
+    options: BONUS_MALUS_STEP_OPTIONS.options,
+    values: BONUS_MALUS_STEP_OPTIONS.values,
+    rules: FLEET_SKIP_RULE,
+  },
+  {
+    id: "immat",
+    type: "input",
+    inputType: "text",
+    uppercase: true,
+    question: "Votre plaque d'immatriculation ?",
+    placeholder: "Ex : AB-123-CD",
+    optional: true,
+    rules: FLEET_SKIP_RULE,
+  },
+];
+
 // Hardcoded VTC questionnaire (not DB-driven). If name/phone weren't already
-// captured on the landing page, ask them first before the VTC-specific questions.
+// captured on the landing page, ask them right after the vehicle-count
+// question — early enough to still capture a partial lead from almost
+// everyone who engages, without leading cold with a personal-info ask.
 export default function DevisVtcPage() {
   const router = useRouter();
   const [steps, setSteps] = useState(null);
@@ -92,11 +129,11 @@ export default function DevisVtcPage() {
     if (!router.isReady) return;
     leadUidRef.current = getOrCreateLeadUid("landing-vtc");
     const { name, phone } = router.query;
-    const prefixSteps = [];
+    const contactSteps = [];
     const answers = {};
-    if (!name) prefixSteps.push(NAME_STEP); else answers.name = name;
-    if (!phone) prefixSteps.push(PHONE_STEP); else answers.phone = phone;
-    setSteps([...prefixSteps, ...VTC_BASE_STEPS]);
+    if (!name) contactSteps.push(NAME_STEP); else answers.name = name;
+    if (!phone) contactSteps.push(PHONE_STEP); else answers.phone = phone;
+    setSteps([VEHICLE_COUNT_STEP, ...contactSteps, ...FLEET_DETAIL_STEPS, ...VTC_DETAIL_STEPS]);
     setInitialAnswers(answers);
 
     // Already known from the landing form (no in-form name/phone steps to
