@@ -1,162 +1,46 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Head from "next/head";
 import Image from "next/image";
 import { useRouter } from "next/router";
 import CarInsuranceForm from "@/components/CarInsuranceForm";
 import ContactPopover from "@/components/ContactPopover";
-import { submitLead } from "@/lib/api";
-import { getOrCreateLeadUid } from "@/lib/leadUid";
 
 const INSURANCE_TYPE_STEP = {
   id: "insurance_type",
   type: "radio",
   card: true,
-  question: "Quel type d'assurance recherchez-vous ?",
+  question: "Quel type d'assurance recherchez-vous ?",
   options: ["Poids lourd", "VTC", "Taxi"],
   values: ["poids_lourd", "vtc", "taxi"],
 };
 
-const BONUS_MALUS_STEP_OPTIONS = {
-  options: ["Bonus (moins de 1.00)", "1.00 — Référence", "Malus (plus de 1.00)", "Je ne sais pas"],
-  values: ["bonus", "1.00", "malus", "unknown"],
+const PATH_BY_TYPE = {
+  poids_lourd: "/devis/poidslourds/",
+  vtc: "/devis/vtc/",
+  taxi: "/devis/taxi/",
 };
 
-const VEHICLE_COUNT_STEP = {
-  id: "nombre_vehicules",
-  type: "radio",
-  card: true,
-  question: "Souhaitez-vous assurer :",
-  options: ["Un seul véhicule", "Une flotte de véhicules"],
-  values: ["un_seul", "flotte"],
-};
-
-// A fleet has more than one driver/vehicle, so the per-driver, per-vehicle
-// questions below don't apply — skip straight past them to submission.
-const FLEET_SKIP_RULE = [{ action: "skip", source_question_id: "nombre_vehicules", operator: "equals", value: "flotte" }];
-// Inverse: these only make sense for a fleet, so solo-vehicle users skip them.
-const SOLO_SKIP_RULE = [{ action: "skip", source_question_id: "nombre_vehicules", operator: "not_equals", value: "flotte" }];
-
-// Fleet-only qualifying questions — cheap radio/select, no document lookups,
-// just enough for the advisor to size and prep the callback.
-const FLEET_DETAIL_STEPS = [
-  {
-    id: "flotte_taille",
-    type: "select",
-    question: "Combien de véhicules compte votre flotte ?",
-    options: ["2 à 5 véhicules", "6 à 10 véhicules", "11 à 20 véhicules", "Plus de 20 véhicules"],
-    values: ["2-5", "6-10", "11-20", "20+"],
-    rules: SOLO_SKIP_RULE,
-  },
-  {
-    id: "flotte_structure",
-    type: "radio",
-    card: true,
-    question: "Vous êtes :",
-    options: ["Auto-entrepreneur / Indépendant", "Société (SARL, SAS…)"],
-    values: ["independant", "societe"],
-    rules: SOLO_SKIP_RULE,
-  },
-  {
-    id: "flotte_deja_assure",
-    type: "radio",
-    card: true,
-    question: "Avez-vous déjà une assurance flotte actuellement ?",
-    options: ["Oui", "Non"],
-    values: ["oui", "non"],
-    rules: SOLO_SKIP_RULE,
-  },
-];
-
-// Ordered cheapest-to-answer first, most likely to require digging up a
-// document (immatriculation) last — minimizes drop-off before capture.
-const TAXI_DETAIL_STEPS = [
-  {
-    id: "permis_anciennete",
-    type: "radio",
-    card: true,
-    question: "Conduisez-vous depuis plus de 3 ans ?",
-    options: ["Oui, plus de 3 ans", "Non, moins de 3 ans"],
-    values: ["plus_3_ans", "moins_3_ans"],
-    rules: FLEET_SKIP_RULE,
-  },
-  {
-    id: "naissance",
-    type: "input",
-    inputType: "date-text",
-    question: "Quelle est votre date de naissance ?",
-    optional: true,
-    rules: FLEET_SKIP_RULE,
-  },
-  {
-    id: "bonus_malus",
-    type: "select",
-    question: "Votre coefficient bonus-malus ?",
-    options: BONUS_MALUS_STEP_OPTIONS.options,
-    values: BONUS_MALUS_STEP_OPTIONS.values,
-    rules: FLEET_SKIP_RULE,
-  },
-  {
-    id: "immat",
-    type: "input",
-    inputType: "text",
-    uppercase: true,
-    question: "Votre plaque d'immatriculation ?",
-    placeholder: "Ex : AB-123-CD",
-    optional: true,
-    rules: FLEET_SKIP_RULE,
-  },
-];
-
-// Hardcoded taxi questionnaire (not DB-driven, same approach as /devis/vtc).
-export default function DevisPage() {
+// Pure dispatcher — no questionnaire content lives here. If the insurance
+// type is already known from the URL, redirect immediately; otherwise ask,
+// then redirect to that type's dedicated flow (/devis/vtc/, /devis/taxi/,
+// /devis/poidslourds/), all three handled the same way.
+export default function DevisDispatcherPage() {
   const router = useRouter();
-  const [steps, setSteps] = useState(null);
-  const [initialAnswers, setInitialAnswers] = useState({});
-  const leadUidRef = useRef(null);
+  const [showPicker, setShowPicker] = useState(false);
 
   useEffect(() => {
     if (!router.isReady) return;
-    leadUidRef.current = getOrCreateLeadUid("landing-taxi");
-
-    const answers = {};
-    const prefixSteps = [];
     if (router.query.insuranceType) {
-      answers.insurance_type = router.query.insuranceType;
+      redirectTo(router.query.insuranceType);
     } else {
-      prefixSteps.push(INSURANCE_TYPE_STEP);
+      setShowPicker(true);
     }
-    setSteps([...prefixSteps, VEHICLE_COUNT_STEP, ...FLEET_DETAIL_STEPS, ...TAXI_DETAIL_STEPS]);
-    setInitialAnswers(answers);
-
-    // name/phone always arrive via the URL on this page (never asked
-    // in-form) — save a partial lead right away so we have contact info
-    // even if the user abandons the rest of the questionnaire.
-    if (router.query.name && router.query.phone) {
-      submitLead({
-        leadUid: leadUidRef.current,
-        name: router.query.name,
-        phone: router.query.phone,
-        insuranceType: router.query.insuranceType,
-        answers,
-        sourcePath: router.pathname,
-        completed: false,
-      }).catch(() => {});
-    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router.isReady]);
 
-  // This page's questions are taxi-flavored — if they pick VTC or Poids lourd
-  // here, send them to that type's dedicated flow instead of continuing here.
-  const REDIRECT_PATH_BY_TYPE = { vtc: "/devis/vtc/", poids_lourd: "/devis/poidslourds/" };
-
-  function handleStepComplete(stepId, answers) {
-    const target = stepId === "insurance_type" ? REDIRECT_PATH_BY_TYPE[answers.insurance_type] : null;
+  function redirectTo(type) {
+    const target = PATH_BY_TYPE[type];
     if (!target) return false;
-    // Abandoning this questionnaire for the other one — clear its saved
-    // progress so a later "back" to this page starts fresh instead of
-    // resuming into a step past this question.
-    try {
-      localStorage.removeItem("nwc_car_form_landing-taxi");
-    } catch {}
     const params = {};
     if (router.query.name) params.name = router.query.name;
     if (router.query.phone) params.phone = router.query.phone;
@@ -165,22 +49,15 @@ export default function DevisPage() {
     return true; // halt CarInsuranceForm's own local auto-advance
   }
 
-  function handleSubmit(answers) {
-    submitLead({
-      leadUid: leadUidRef.current,
-      name: router.query.name,
-      phone: router.query.phone,
-      insuranceType: answers.insurance_type,
-      answers,
-      sourcePath: router.pathname,
-      completed: true,
-    }).catch(() => {});
+  function handleStepComplete(stepId, answers) {
+    if (stepId !== "insurance_type") return false;
+    return redirectTo(answers.insurance_type);
   }
 
   return (
     <>
       <Head>
-        <title>Votre devis assurance taxi — New World Courtage</title>
+        <title>Votre devis d&apos;assurance — New World Courtage</title>
         <meta name="robots" content="noindex" />
       </Head>
 
@@ -196,16 +73,14 @@ export default function DevisPage() {
 
       <main className="bg-white">
         <div className="max-w-4xl mx-auto px-4 lg:px-6 py-10 lg:py-16">
-          {!steps && (
-            <p className="text-sm text-gray-400">Chargement du questionnaire…</p>
+          {!showPicker && (
+            <p className="text-sm text-gray-400">Chargement…</p>
           )}
-          {steps && (
+          {showPicker && (
             <CarInsuranceForm
-              steps={steps}
-              initialAnswers={initialAnswers}
+              steps={[INSURANCE_TYPE_STEP]}
               theme="light"
-              storageKey="landing-taxi"
-              onSubmit={handleSubmit}
+              storageKey="landing-dispatch"
               onStepComplete={handleStepComplete}
             />
           )}

@@ -27,7 +27,7 @@ const NAME_STEP = {
   id: "name",
   type: "input",
   inputType: "text",
-  question: "Quel est votre nom complet ?",
+  question: "Quel est votre nom complet ?",
   placeholder: "Ex : Jean Dupont",
   nextLabel: "Enregistrer et continuer",
 };
@@ -36,7 +36,7 @@ const PHONE_STEP = {
   id: "phone",
   type: "input",
   inputType: "tel",
-  question: "Quel est votre numéro de téléphone ?",
+  question: "Quel est votre numéro de téléphone ?",
   placeholder: "Ex : 06 12 34 56 78",
   nextLabel: "Enregistrer et continuer",
 };
@@ -53,7 +53,7 @@ const FLEET_DETAIL_STEPS = [
   {
     id: "flotte_taille",
     type: "select",
-    question: "Combien de véhicules compte votre flotte ?",
+    question: "Combien de véhicules compte votre flotte ?",
     options: ["2 à 5 véhicules", "6 à 10 véhicules", "11 à 20 véhicules", "Plus de 20 véhicules"],
     values: ["2-5", "6-10", "11-20", "20+"],
     rules: SOLO_SKIP_RULE,
@@ -71,7 +71,7 @@ const FLEET_DETAIL_STEPS = [
     id: "flotte_deja_assure",
     type: "radio",
     card: true,
-    question: "Avez-vous déjà une assurance flotte actuellement ?",
+    question: "Avez-vous déjà une assurance flotte actuellement ?",
     options: ["Oui", "Non"],
     values: ["oui", "non"],
     rules: SOLO_SKIP_RULE,
@@ -80,12 +80,12 @@ const FLEET_DETAIL_STEPS = [
 
 // Ordered cheapest-to-answer first, most likely to require digging up a
 // document (immatriculation) last — minimizes drop-off before capture.
-const POIDS_LOURD_DETAIL_STEPS = [
+const TAXI_DETAIL_STEPS = [
   {
     id: "permis_anciennete",
     type: "radio",
     card: true,
-    question: "Conduisez-vous depuis plus de 3 ans ?",
+    question: "Conduisez-vous depuis plus de 3 ans ?",
     options: ["Oui, plus de 3 ans", "Non, moins de 3 ans"],
     values: ["plus_3_ans", "moins_3_ans"],
     rules: FLEET_SKIP_RULE,
@@ -94,14 +94,14 @@ const POIDS_LOURD_DETAIL_STEPS = [
     id: "naissance",
     type: "input",
     inputType: "date-text",
-    question: "Quelle est votre date de naissance ?",
+    question: "Quelle est votre date de naissance ?",
     optional: true,
     rules: FLEET_SKIP_RULE,
   },
   {
     id: "bonus_malus",
     type: "select",
-    question: "Votre coefficient bonus-malus ?",
+    question: "Votre coefficient bonus-malus ?",
     options: BONUS_MALUS_STEP_OPTIONS.options,
     values: BONUS_MALUS_STEP_OPTIONS.values,
     rules: FLEET_SKIP_RULE,
@@ -111,19 +111,19 @@ const POIDS_LOURD_DETAIL_STEPS = [
     type: "input",
     inputType: "text",
     uppercase: true,
-    question: "Votre plaque d'immatriculation ?",
+    question: "Votre plaque d'immatriculation ?",
     placeholder: "Ex : AB-123-CD",
     optional: true,
     rules: FLEET_SKIP_RULE,
   },
 ];
 
-// Hardcoded poids lourd questionnaire (not DB-driven, same approach as
-// /devis/vtc). If name/phone weren't already captured on the landing page,
-// ask them right after the vehicle-count question — early enough to still
-// capture a partial lead from almost everyone who engages, without leading
-// cold with a personal-info ask.
-export default function DevisPoidsLourdsPage() {
+// Hardcoded taxi questionnaire (not DB-driven, same approach as /devis/vtc
+// and /devis/poidslourds). If name/phone weren't already captured on the
+// landing page, ask them right after the vehicle-count question — early
+// enough to still capture a partial lead from almost everyone who engages,
+// without leading cold with a personal-info ask.
+export default function DevisTaxiPage() {
   const router = useRouter();
   const [steps, setSteps] = useState(null);
   const [initialAnswers, setInitialAnswers] = useState({});
@@ -132,9 +132,9 @@ export default function DevisPoidsLourdsPage() {
 
   useEffect(() => {
     if (!router.isReady) return;
-    leadUidRef.current = getOrCreateLeadUid("landing-poidslourds");
+    leadUidRef.current = getOrCreateLeadUid("landing-taxi");
     clarityIdentify(leadUidRef.current);
-    claritySet("insurance_type", "poids_lourd");
+    claritySet("insurance_type", "taxi");
     Object.entries(getStoredUtmParams()).forEach(([key, value]) => claritySet(key, value));
 
     const { name, phone } = router.query;
@@ -142,7 +142,7 @@ export default function DevisPoidsLourdsPage() {
     const answers = {};
     if (!name) contactSteps.push(NAME_STEP); else answers.name = name;
     if (!phone) contactSteps.push(PHONE_STEP); else answers.phone = phone;
-    setSteps([VEHICLE_COUNT_STEP, ...contactSteps, ...FLEET_DETAIL_STEPS, ...POIDS_LOURD_DETAIL_STEPS]);
+    setSteps([VEHICLE_COUNT_STEP, ...contactSteps, ...FLEET_DETAIL_STEPS, ...TAXI_DETAIL_STEPS]);
     setInitialAnswers(answers);
 
     // Already known from the landing form (no in-form name/phone steps to
@@ -161,7 +161,7 @@ export default function DevisPoidsLourdsPage() {
       leadUid: leadUidRef.current,
       name: answers.name,
       phone: answers.phone,
-      insuranceType: "poids_lourd",
+      insuranceType: "taxi",
       answers,
       sourcePath: router.pathname,
       completed: false,
@@ -178,7 +178,7 @@ export default function DevisPoidsLourdsPage() {
       leadUid: leadUidRef.current,
       name: answers.name,
       phone: answers.phone,
-      insuranceType: "poids_lourd",
+      insuranceType: "taxi",
       answers,
       sourcePath: router.pathname,
       completed: true,
@@ -188,7 +188,7 @@ export default function DevisPoidsLourdsPage() {
   return (
     <>
       <Head>
-        <title>Votre devis assurance poids lourd — New World Courtage</title>
+        <title>Votre devis assurance taxi — New World Courtage</title>
         <meta name="robots" content="noindex" />
       </Head>
 
@@ -212,7 +212,7 @@ export default function DevisPoidsLourdsPage() {
               steps={steps}
               initialAnswers={initialAnswers}
               theme="light"
-              storageKey="landing-poidslourds"
+              storageKey="landing-taxi"
               onSubmit={handleSubmit}
               onStepComplete={handleStepComplete}
             />

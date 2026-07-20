@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react";
+import { flushSync } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Field, FieldContent, FieldLabel, FieldTitle } from "@/components/ui/field";
 import { Stepper, StepperNav, StepperItem, StepperTrigger, StepperIndicator, StepperSeparator, StepperTitle } from "@/components/ui/stepper";
+import { clarityEvent } from "@/lib/clarity";
 
 const CAR_BRANDS = [
   "Audi", "BMW", "Citroën", "Dacia", "DS Automobiles", "Fiat", "Ford", "Honda",
@@ -229,14 +231,40 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
     onProgress?.(progress);
   }, [progress]);
 
-  // Auto-focus the current question's field so users can type/select right
-  // away instead of having to click into it first.
+  // Tags each question as it's reached so Clarity sessions can be filtered
+  // by exactly where people are in the flow — without this, Clarity only
+  // sees one URL for the whole multi-step form and can't tell steps apart.
   useEffect(() => {
     if (!hydrated) return;
+    clarityEvent(`step_reached_${step.id}`);
+  }, [step.id, hydrated]);
+
+  useEffect(() => {
+    if (submitted) clarityEvent("form_completed");
+  }, [submitted]);
+
+  // Auto-focus the current question's field so users can type/select right
+  // away instead of having to click into it first. Mobile browsers only
+  // allow a text field to grab focus (and pop the keyboard) when that call
+  // happens synchronously inside the user gesture that triggered it — a
+  // separate useEffect firing on the next tick is too late and gets
+  // silently ignored on iOS Safari. focusStepContent() is called directly
+  // from the nav handlers below instead, right after flushSync applies the
+  // step change, so it's still within the original tap/click's call stack.
+  function focusStepContent() {
     const container = document.getElementById("step-content");
     const focusable = container?.querySelector("input, button, [tabindex]");
     focusable?.focus({ preventScroll: true });
-  }, [stepIdx, hydrated]);
+  }
+
+  // Still handles the very first question on load/resume — there's no
+  // preceding gesture then anyway, so the mobile restriction above doesn't
+  // apply (and is moot: no browser auto-opens a keyboard on page load).
+  useEffect(() => {
+    if (!hydrated) return;
+    focusStepContent();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hydrated]);
 
   // Resume from a previous visit: merge any saved progress under `answers`
   // (URL-derived initialAnswers still win on conflicts), jump back to the
@@ -291,7 +319,8 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
       setSubmitted(true);
       onSubmit?.(answers);
     } else {
-      setStepIdx(next);
+      flushSync(() => setStepIdx(next));
+      focusStepContent();
     }
   }
 
@@ -299,7 +328,8 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
     const prev = findVisibleStepIndex(steps, stepIdx - 1, -1, answers);
     if (prev >= 0) {
       setDirection("prev");
-      setStepIdx(prev);
+      flushSync(() => setStepIdx(prev));
+      focusStepContent();
     }
   }
 
@@ -310,17 +340,19 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
     // the local auto-advance below so it can't race a slow page transition
     // and overwrite this step's saved progress after we've already left.
     if (onStepComplete?.(stepId, nextAnswers)) return;
-    setTimeout(() => {
-      const next = findVisibleStepIndex(steps, stepIdx + 1, 1, nextAnswers);
-      if (next >= steps.length) {
-        clearStoredProgress(storageKey);
-        setSubmitted(true);
-        onSubmit?.(nextAnswers);
-      } else {
-        setDirection("next");
-        setStepIdx(next);
-      }
-    }, 200);
+    // Advances synchronously (no setTimeout) so the next field's auto-focus
+    // below still runs inside this tap's user-activation window — any async
+    // gap here and mobile Safari silently refuses to open the keyboard.
+    const next = findVisibleStepIndex(steps, stepIdx + 1, 1, nextAnswers);
+    if (next >= steps.length) {
+      clearStoredProgress(storageKey);
+      setSubmitted(true);
+      onSubmit?.(nextAnswers);
+    } else {
+      setDirection("next");
+      flushSync(() => setStepIdx(next));
+      focusStepContent();
+    }
   }
 
   if (submitted) {
@@ -566,7 +598,7 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
             onClick={handleNext}
             className={`gap-1 ${t.nextBtn}`}
           >
-            {isLastStep ? "Envoyer ma demande" : "Suivant"}
+            {isLastStep ? "Envoyer ma demande" : (step.nextLabel || "Suivant")}
             {!isLastStep && <ChevronRight size={16} />}
           </Button>
         </ButtonGroup>

@@ -1,7 +1,6 @@
 import { forwardRef } from "react";
 import Link from "next/link";
 import { Phone, Mail } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 function WhatsAppIcon({ size = 12 }) {
@@ -30,25 +29,34 @@ const Footer = forwardRef(function Footer(props, ref) {
             <span className="text-sm font-semibold text-gray-700 whitespace-nowrap px-2">Ou contactez-nous directement</span>
             <Separator className="flex-1" />
           </div>
-          <div className="flex flex-row flex-nowrap justify-center gap-1.5 sm:gap-2">
-            <Button variant="outline" size="xs" asChild className="gap-1.5 rounded-lg border-gray-200 text-gray-700 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] hover:bg-transparent">
-              <a href="tel:+33745891865" target="_blank" rel="noopener noreferrer">
-                <Phone size={12} className="shrink-0" />
-                <span className="hidden sm:inline">07 45 89 18 65</span>
-              </a>
-            </Button>
-            <Button variant="outline" size="xs" asChild className="gap-1.5 rounded-lg border-gray-200 text-gray-700 hover:border-[#25D366] hover:text-[#25D366] hover:bg-transparent">
-              <a href="https://wa.me/33774595329" target="_blank" rel="noopener noreferrer">
-                <WhatsAppIcon size={12} />
-                <span className="hidden sm:inline">07 74 59 53 29</span>
-              </a>
-            </Button>
-            <Button variant="outline" size="xs" asChild className="gap-1.5 rounded-lg border-gray-200 text-gray-700 hover:border-[var(--color-brand)] hover:text-[var(--color-brand)] hover:bg-transparent">
-              <a href="mailto:contact@newworldcourtage.com" target="_blank" rel="noopener noreferrer">
-                <Mail size={12} className="shrink-0" />
-                <span className="hidden sm:inline">contact@newworldcourtage.com</span>
-              </a>
-            </Button>
+          <div className="flex flex-row flex-nowrap justify-center gap-2">
+            <a
+              href="tel:+33745891865"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--color-brand)]/25 bg-[var(--color-brand)]/8 text-[var(--color-brand)] hover:bg-[var(--color-brand)]/15 transition-colors whitespace-nowrap"
+            >
+              <Phone size={18} className="shrink-0" />
+              <span className="hidden sm:inline text-sm font-medium">07 45 89 18 65</span>
+            </a>
+            <a
+              href="https://wa.me/33774595329"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-full border border-[#25D366]/35 bg-[#25D366]/12 text-[#1a8c4a] hover:bg-[#25D366]/20 transition-colors whitespace-nowrap"
+            >
+              <WhatsAppIcon size={18} />
+              <span className="hidden sm:inline text-sm font-medium">07 74 59 53 29</span>
+            </a>
+            <a
+              href="mailto:contact@newworldcourtage.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1.5 h-11 px-3.5 rounded-full border border-[var(--color-brand)]/25 bg-[var(--color-brand)]/8 text-[var(--color-brand)] hover:bg-[var(--color-brand)]/15 transition-colors whitespace-nowrap"
+            >
+              <Mail size={18} className="shrink-0" />
+              <span className="hidden sm:inline text-sm font-medium">contact@newworldcourtage.com</span>
+            </a>
           </div>
         </div>
 

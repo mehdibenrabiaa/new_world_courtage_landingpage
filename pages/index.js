@@ -1,8 +1,12 @@
+import { useEffect } from "react";
 import Head from "next/head";
 import Image from "next/image";
+import { useRouter } from "next/router";
 import { ShieldCheck, Clock, Users } from "lucide-react";
 import CarCalculatorSection from "@/components/CarCalculatorSection";
 import ContactPopover from "@/components/ContactPopover";
+import { captureUtmParams } from "@/lib/utm";
+import { claritySet } from "@/lib/clarity";
 
 // Facebook Ads landing page — deliberately minimal (no nav menu, no other
 // pages to click into) so there's only one path: fill the form. Swap the
@@ -10,6 +14,17 @@ import ContactPopover from "@/components/ContactPopover";
 // CarCalculatorSection + questionnaire flow underneath is what's shared
 // with the main site and the CRM.
 export default function LandingPage() {
+  const router = useRouter();
+
+  // Ad traffic carries campaign info in the URL — stash it (for the devis
+  // pages later) and tag it onto the Clarity session right away so you can
+  // filter recordings by which ad/campaign brought that visitor in.
+  useEffect(() => {
+    if (!router.isReady) return;
+    const utm = captureUtmParams(router.query);
+    Object.entries(utm).forEach(([key, value]) => claritySet(key, value));
+  }, [router.isReady]);
+
   return (
     <>
       <Head>

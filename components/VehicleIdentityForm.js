@@ -18,6 +18,7 @@ const INSURANCE_TYPES = [
 const DEVIS_PATH_BY_TYPE = {
   vtc: "/devis/vtc/",
   poids_lourd: "/devis/poidslourds/",
+  taxi: "/devis/taxi/",
 };
 
 function readStorage() {

@@ -6,6 +6,8 @@ import CarInsuranceForm from "@/components/CarInsuranceForm";
 import ContactPopover from "@/components/ContactPopover";
 import { submitLead } from "@/lib/api";
 import { getOrCreateLeadUid } from "@/lib/leadUid";
+import { clarityIdentify, claritySet } from "@/lib/clarity";
+import { getStoredUtmParams } from "@/lib/utm";
 
 const BONUS_MALUS_STEP_OPTIONS = {
   options: ["Bonus (moins de 1.00)", "1.00 — Référence", "Malus (plus de 1.00)", "Je ne sais pas"],
@@ -25,16 +27,18 @@ const NAME_STEP = {
   id: "name",
   type: "input",
   inputType: "text",
-  question: "Quel est votre nom complet ?",
+  question: "Quel est votre nom complet ?",
   placeholder: "Ex : Jean Dupont",
+  nextLabel: "Enregistrer et continuer",
 };
 
 const PHONE_STEP = {
   id: "phone",
   type: "input",
   inputType: "tel",
-  question: "Quel est votre numéro de téléphone ?",
+  question: "Quel est votre numéro de téléphone ?",
   placeholder: "Ex : 06 12 34 56 78",
+  nextLabel: "Enregistrer et continuer",
 };
 
 // A fleet has more than one driver/vehicle, so the per-driver, per-vehicle
@@ -49,7 +53,7 @@ const FLEET_DETAIL_STEPS = [
   {
     id: "flotte_taille",
     type: "select",
-    question: "Combien de véhicules compte votre flotte ?",
+    question: "Combien de véhicules compte votre flotte ?",
     options: ["2 à 5 véhicules", "6 à 10 véhicules", "11 à 20 véhicules", "Plus de 20 véhicules"],
     values: ["2-5", "6-10", "11-20", "20+"],
     rules: SOLO_SKIP_RULE,
@@ -67,7 +71,7 @@ const FLEET_DETAIL_STEPS = [
     id: "flotte_deja_assure",
     type: "radio",
     card: true,
-    question: "Avez-vous déjà une assurance flotte actuellement ?",
+    question: "Avez-vous déjà une assurance flotte actuellement ?",
     options: ["Oui", "Non"],
     values: ["oui", "non"],
     rules: SOLO_SKIP_RULE,
@@ -81,7 +85,7 @@ const VTC_DETAIL_STEPS = [
     id: "permis_anciennete",
     type: "radio",
     card: true,
-    question: "Conduisez-vous depuis plus de 3 ans ?",
+    question: "Conduisez-vous depuis plus de 3 ans ?",
     options: ["Oui, plus de 3 ans", "Non, moins de 3 ans"],
     values: ["plus_3_ans", "moins_3_ans"],
     rules: FLEET_SKIP_RULE,
@@ -90,14 +94,14 @@ const VTC_DETAIL_STEPS = [
     id: "naissance",
     type: "input",
     inputType: "date-text",
-    question: "Quelle est votre date de naissance ?",
+    question: "Quelle est votre date de naissance ?",
     optional: true,
     rules: FLEET_SKIP_RULE,
   },
   {
     id: "bonus_malus",
     type: "select",
-    question: "Votre coefficient bonus-malus ?",
+    question: "Votre coefficient bonus-malus ?",
     options: BONUS_MALUS_STEP_OPTIONS.options,
     values: BONUS_MALUS_STEP_OPTIONS.values,
     rules: FLEET_SKIP_RULE,
@@ -107,7 +111,7 @@ const VTC_DETAIL_STEPS = [
     type: "input",
     inputType: "text",
     uppercase: true,
-    question: "Votre plaque d'immatriculation ?",
+    question: "Votre plaque d'immatriculation ?",
     placeholder: "Ex : AB-123-CD",
     optional: true,
     rules: FLEET_SKIP_RULE,
@@ -128,6 +132,10 @@ export default function DevisVtcPage() {
   useEffect(() => {
     if (!router.isReady) return;
     leadUidRef.current = getOrCreateLeadUid("landing-vtc");
+    clarityIdentify(leadUidRef.current);
+    claritySet("insurance_type", "vtc");
+    Object.entries(getStoredUtmParams()).forEach(([key, value]) => claritySet(key, value));
+
     const { name, phone } = router.query;
     const contactSteps = [];
     const answers = {};
@@ -161,6 +169,7 @@ export default function DevisVtcPage() {
 
   function handleStepComplete(stepId, answers) {
     if (stepId === "name" || stepId === "phone") savePartial(answers);
+    if (stepId === "nombre_vehicules") claritySet("vehicle_mode", answers.nombre_vehicules);
   }
 
   function handleSubmit(answers) {
