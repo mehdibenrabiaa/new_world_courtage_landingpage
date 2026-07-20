@@ -56,6 +56,7 @@ const FLEET_DETAIL_STEPS = [
     question: "Combien de véhicules compte votre flotte ?",
     options: ["2 à 5 véhicules", "6 à 10 véhicules", "11 à 20 véhicules", "Plus de 20 véhicules"],
     values: ["2-5", "6-10", "11-20", "20+"],
+    autoOpen: true,
     rules: SOLO_SKIP_RULE,
   },
   {
@@ -104,6 +105,8 @@ const VTC_DETAIL_STEPS = [
     question: "Votre coefficient bonus-malus ?",
     options: BONUS_MALUS_STEP_OPTIONS.options,
     values: BONUS_MALUS_STEP_OPTIONS.values,
+    optional: true,
+    autoOpen: true,
     rules: FLEET_SKIP_RULE,
   },
   {

@@ -473,7 +473,7 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
             {/* Select */}
             {step.type === "select" && (
               <>
-                <Select value={answer} onValueChange={val => setAnswer(step.id, val)}>
+                <Select value={answer} onValueChange={val => setAnswer(step.id, val)} defaultOpen={!!step.autoOpen}>
                   <SelectTrigger
                     id={`field-${step.id}`}
                     className={`w-full max-w-sm bg-white h-[50px] data-[size=default]:h-[50px] ${errors[step.id] ? "border-[var(--color-error)] hover:border-[var(--color-error)] focus:border-[var(--color-error)] focus:shadow-[0_0_0_2px_rgba(255,143,0,0.15)]" : ""}`}

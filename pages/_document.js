@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html lang="fr">
       <Head>
-        <link rel="icon" type="image/svg+xml" href="/nwc_logo.svg" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </Head>
       <body>
         <Main />
