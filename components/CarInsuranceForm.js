@@ -583,7 +583,17 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
       })()}
 
       {/* Navigation */}
-      <div className={`flex items-center justify-end pt-2 ${sections.length > 1 ? "lg:pr-64" : ""}`}>
+      <div className={`flex items-center gap-4 flex-wrap ${step.showConsentNote ? "justify-between" : "justify-end"} pt-2 ${sections.length > 1 ? "lg:pr-64" : ""}`}>
+        {step.showConsentNote && (
+          <p className={`text-xs leading-relaxed max-w-xs ${t.consentNote || "text-gray-400"}`}>
+            En cliquant sur «&nbsp;{step.nextLabel || "Enregistrer et continuer"}&nbsp;», vous acceptez de transmettre vos
+            informations à New World Courtage, qui les traitera conformément à sa{" "}
+            <Link href="/confidentialite/" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
+              Politique de confidentialité
+            </Link>.
+          </p>
+        )}
+
         <ButtonGroup>
           <Button
             variant="outline"
@@ -604,16 +614,6 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
           </Button>
         </ButtonGroup>
       </div>
-
-      {step.showConsentNote && (
-        <p className={`text-xs leading-relaxed text-right ${sections.length > 1 ? "lg:pr-64" : ""} ${t.consentNote || "text-gray-400"}`}>
-          En cliquant sur «&nbsp;{step.nextLabel || "Enregistrer et continuer"}&nbsp;», vous acceptez de transmettre vos
-          informations à New World Courtage, qui les traitera conformément à sa{" "}
-          <Link href="/confidentialite/" target="_blank" rel="noopener noreferrer" className="underline hover:no-underline">
-            Politique de confidentialité
-          </Link>.
-        </p>
-      )}
 
     </div>
 
