@@ -8,7 +8,7 @@ import { getConsent, saveConsent } from "@/lib/consent";
 
 // ── Replace with your actual tracking IDs ────────────────────────────────────
 const GA_ID         = "G-XXXXXXXXXX";
-const CLARITY_ID    = "xpcjl7xh6u";
+const CLARITY_ID    = process.env.NEXT_PUBLIC_CLARITY_ID || "xpcjl7xh6u";
 const META_PIXEL_ID = "XXXXXXXXXXXXXXX";
 // ─────────────────────────────────────────────────────────────────────────────
 
