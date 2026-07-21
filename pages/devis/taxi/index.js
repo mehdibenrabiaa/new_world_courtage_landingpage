@@ -30,6 +30,7 @@ const NAME_STEP = {
   question: "Quel est votre nom complet ?",
   placeholder: "Ex : Jean Dupont",
   nextLabel: "Enregistrer et continuer",
+  showConsentNote: true,
 };
 
 const PHONE_STEP = {
@@ -39,6 +40,7 @@ const PHONE_STEP = {
   question: "Quel est votre numéro de téléphone ?",
   placeholder: "Ex : 06 12 34 56 78",
   nextLabel: "Enregistrer et continuer",
+  showConsentNote: true,
 };
 
 // A fleet has more than one driver/vehicle, so the per-driver, per-vehicle
