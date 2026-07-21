@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import Head from "next/head";
 import { useRouter } from "next/router";
 import "../global.css";
 import { Geist } from "next/font/google";
@@ -37,6 +38,9 @@ export default function MyApp({ Component, pageProps }) {
 
   return (
     <div className={geistSans.className} style={{ minHeight: "100vh", overflowX: "clip" }}>
+      <Head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </Head>
       <div style={showFixedFooter ? { minHeight: `calc(100vh - ${footerHeight}px)`, paddingBottom: footerHeight } : undefined}>
         <Component {...pageProps} />
       </div>

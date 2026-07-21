@@ -31,7 +31,7 @@ export default function ContactPopover() {
           </span>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-[var(--color-text)]">Écrivez-nous sur WhatsApp</span>
-            <span className="text-xs text-gray-400">07 74 59 53 29</span>
+            <span className="text-xs text-gray-500">07 74 59 53 29</span>
           </div>
         </a>
         <a
@@ -45,7 +45,7 @@ export default function ContactPopover() {
           </span>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-[var(--color-text)]">Appelez-nous</span>
-            <span className="text-xs text-gray-400">07 45 89 18 65</span>
+            <span className="text-xs text-gray-500">07 45 89 18 65</span>
           </div>
         </a>
       </PopoverContent>

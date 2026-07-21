@@ -79,7 +79,7 @@ export default function DevisDispatcherPage() {
       <main className="bg-white">
         <div className="max-w-4xl mx-auto px-4 lg:px-6 py-10 lg:py-16">
           {!showPicker && (
-            <p className="text-sm text-gray-400">Chargement…</p>
+            <p className="text-sm text-gray-500">Chargement…</p>
           )}
           {showPicker && (
             <CarInsuranceForm

@@ -215,7 +215,7 @@ export default function DevisPoidsLourdsPage() {
       <main className="bg-white">
         <div className="max-w-4xl mx-auto px-4 lg:px-6 py-10 lg:py-16">
           {!steps && (
-            <p className="text-sm text-gray-400">Chargement du questionnaire…</p>
+            <p className="text-sm text-gray-500">Chargement du questionnaire…</p>
           )}
           {steps && (
             <CarInsuranceForm

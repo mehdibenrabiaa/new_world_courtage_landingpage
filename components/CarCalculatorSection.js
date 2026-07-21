@@ -9,9 +9,9 @@ export default function CarCalculatorSection({ redirectTo }) {
 
           {/* Left — title (1/3) */}
           <div className="hidden lg:flex lg:w-[40%] px-8 py-10 lg:px-14 lg:py-14 items-start">
-            <h2 className={`text-[8vw] sm:text-[38px] lg:text-[46px] leading-[1.1] text-white ${libreCaslon.className}`}>
+            <h1 className={`text-[8vw] sm:text-[38px] lg:text-[46px] leading-[1.1] text-white ${libreCaslon.className}`}>
               Recevez votre devis d&apos;assurance <em className={`italic ${libreCaslon.className}`}>gratuitement.</em>
-            </h2>
+            </h1>
           </div>
 
           {/* Right — content (2/3) */}

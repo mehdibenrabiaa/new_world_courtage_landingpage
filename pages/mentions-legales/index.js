@@ -123,7 +123,7 @@ export default function MentionsLegales() {
               <Row label="Site web" value={<a href="https://www.mediation-assurance.org" target="_blank" rel="noopener noreferrer" className="text-[var(--color-brand)] hover:underline">www.mediation-assurance.org</a>} />
               <Row label="Email" value={<a href="mailto:le.mediateur@mediation-assurance.org" className="text-[var(--color-brand)] hover:underline">le.mediateur@mediation-assurance.org</a>} />
             </div>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-gray-500">
               La saisine du médiateur n'est possible qu'après avoir préalablement tenté de résoudre le litige directement avec nos services à l'adresse <a href="mailto:contact@newworldcourtage.com" className="text-[var(--color-brand)] hover:underline">contact@newworldcourtage.com</a>.
             </p>
           </Section>
