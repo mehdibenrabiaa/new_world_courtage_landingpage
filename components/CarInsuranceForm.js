@@ -113,7 +113,7 @@ const TOKENS = {
     eyebrow:         "text-gray-500 font-medium",
     bigQuestion:     "text-[var(--color-text)]",
     label:           "text-[rgba(0,0,0,0.88)] font-normal",
-    hint:            "text-gray-400",
+    hint:            "text-gray-500",
     optional:        "text-gray-400",
     radioText:       "text-[rgba(0,0,0,0.88)]",
     radioDot:        "border-[#d9d9d9] bg-white group-hover:border-[var(--color-brand)]",
@@ -211,7 +211,7 @@ function clearStoredProgress(key) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, onStepComplete, storageKey }) {
+export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, onStepComplete, storageKey, introText }) {
   const [stepIdx, setStepIdx] = useState(startStep);
   const [direction, setDirection] = useState("next");
   const [answers, setAnswers] = useState(initialAnswers);
@@ -371,6 +371,12 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
 
         return (
           <div id="step-content" key={step.id} className={`flex flex-col gap-5 max-w-3xl ${direction === "next" ? "slide-in-right" : "slide-in-left"}`}>
+
+            {/* First-question-only intro — first-time visitors don't always
+                realize this is a form to fill out, not just page content. */}
+            {stepIdx === 0 && introText && (
+              <p className={`text-sm font-medium ${t.eyebrow}`}>{introText}</p>
+            )}
 
             {/* Eyebrow + big question */}
             <div className="flex flex-col gap-2">

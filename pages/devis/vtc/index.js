@@ -21,6 +21,7 @@ const VEHICLE_COUNT_STEP = {
   question: "Souhaitez-vous assurer :",
   options: ["Un seul véhicule", "Une flotte de véhicules"],
   values: ["un_seul", "flotte"],
+  hint: "Sélectionnez une option pour continuer.",
 };
 
 const NAME_STEP = {
@@ -224,6 +225,7 @@ export default function DevisVtcPage() {
               storageKey="landing-vtc"
               onSubmit={handleSubmit}
               onStepComplete={handleStepComplete}
+              introText="Remplissez ce formulaire pour recevoir votre devis gratuit en 2 minutes."
             />
           )}
         </div>

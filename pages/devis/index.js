@@ -12,6 +12,7 @@ const INSURANCE_TYPE_STEP = {
   question: "Quel type d'assurance recherchez-vous ?",
   options: ["Poids lourd", "VTC", "Taxi"],
   values: ["poids_lourd", "vtc", "taxi"],
+  hint: "Sélectionnez une option pour continuer.",
 };
 
 const PATH_BY_TYPE = {
@@ -87,6 +88,7 @@ export default function DevisDispatcherPage() {
               theme="light"
               storageKey="landing-dispatch"
               onStepComplete={handleStepComplete}
+              introText="Remplissez ce formulaire pour recevoir votre devis gratuit en 2 minutes."
             />
           )}
         </div>
