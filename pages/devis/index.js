@@ -88,7 +88,14 @@ export default function DevisDispatcherPage() {
               theme="light"
               storageKey="landing-dispatch"
               onStepComplete={handleStepComplete}
-              introText="Remplissez ce formulaire pour recevoir votre devis gratuit en 2 minutes."
+              introScreen={{
+                heading: "Comment ça marche ?",
+                steps: [
+                  "Répondez à quelques questions simples sur votre véhicule (2 minutes).",
+                  "Un conseiller vous recontacte avec un devis personnalisé et vous aide à trouver l'assurance qui vous convient le mieux.",
+                ],
+                cta: "Commencer",
+              }}
             />
           )}
         </div>

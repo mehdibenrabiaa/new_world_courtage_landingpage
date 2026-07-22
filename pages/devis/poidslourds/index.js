@@ -18,7 +18,7 @@ const VEHICLE_COUNT_STEP = {
   id: "nombre_vehicules",
   type: "radio",
   card: true,
-  question: "Souhaitez-vous assurer :",
+  question: "Combien de véhicules souhaitez-vous assurer ?",
   options: ["Un seul véhicule", "Une flotte de véhicules"],
   values: ["un_seul", "flotte"],
   hint: "Sélectionnez une option pour continuer.",
@@ -226,7 +226,14 @@ export default function DevisPoidsLourdsPage() {
               storageKey="landing-poidslourds"
               onSubmit={handleSubmit}
               onStepComplete={handleStepComplete}
-              introText="Remplissez ce formulaire pour recevoir votre devis gratuit en 2 minutes."
+              introScreen={{
+                heading: "Comment ça marche ?",
+                steps: [
+                  "Répondez à quelques questions simples sur votre véhicule (2 minutes).",
+                  "Un conseiller vous recontacte avec un devis personnalisé et vous aide à trouver l'assurance qui vous convient le mieux.",
+                ],
+                cta: "Commencer",
+              }}
             />
           )}
         </div>

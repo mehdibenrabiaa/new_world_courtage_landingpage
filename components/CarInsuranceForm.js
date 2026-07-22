@@ -140,6 +140,45 @@ const TOKENS = {
   },
 };
 
+// Shown once, before the first question, to first-time visitors who land
+// directly on a questionnaire (e.g. from a Facebook ad) and might not
+// immediately realize it's an interactive form rather than page content —
+// same idea as the intro screen on Facebook's own Instant Forms.
+function IntroScreen({ t, introScreen, onStart }) {
+  return (
+    <div className="flex flex-col gap-6 max-w-3xl">
+      <div className="flex flex-col gap-3">
+        <p className={`text-2xl sm:text-[35px] font-semibold leading-snug ${t.bigQuestion}`}>
+          {introScreen.heading}
+        </p>
+        {introScreen.body && (
+          <p className={`text-base leading-relaxed ${t.eyebrow}`}>{introScreen.body}</p>
+        )}
+      </div>
+
+      {introScreen.steps && introScreen.steps.length > 0 && (
+        <ol className="flex flex-col gap-3">
+          {introScreen.steps.map((label, i) => (
+            <li key={i} className="flex items-start gap-3">
+              <span className={`flex items-center justify-center shrink-0 w-7 h-7 rounded-full text-sm font-semibold ${t.stepCircleActive}`}>
+                {i + 1}
+              </span>
+              <span className={`text-base pt-0.5 ${t.bigQuestion}`}>{label}</span>
+            </li>
+          ))}
+        </ol>
+      )}
+
+      <div>
+        <Button onClick={onStart} className={`gap-1 ${t.nextBtn}`}>
+          {introScreen.cta || "Commencer"}
+          <ChevronRight size={16} />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 function BookingPanel({ t }) {
   return (
     <div className="flex flex-col gap-8">
@@ -211,13 +250,14 @@ function clearStoredProgress(key) {
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, onStepComplete, storageKey, introText }) {
+export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers = {}, startStep = 0, theme = "dark", onProgress, onSubmit, onStepComplete, storageKey, introScreen }) {
   const [stepIdx, setStepIdx] = useState(startStep);
   const [direction, setDirection] = useState("next");
   const [answers, setAnswers] = useState(initialAnswers);
   const [submitted, setSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
   const [hydrated, setHydrated] = useState(false);
+  const [showIntro, setShowIntro] = useState(!!introScreen);
 
   const t = TOKENS[theme];
   const step = steps[stepIdx];
@@ -284,6 +324,9 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
     if (isStepSkipped(steps[targetStep], mergedAnswers)) {
       targetStep = Math.min(findVisibleStepIndex(steps, targetStep + 1, 1, mergedAnswers), steps.length - 1);
     }
+    // Returning visitors who already made progress have seen the intro —
+    // only first-time, blank-slate sessions get it.
+    if (saved) setShowIntro(false);
     setAnswers(mergedAnswers);
     setStepIdx(targetStep);
     setHydrated(true);
@@ -356,8 +399,17 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
     }
   }
 
+  function handleStartIntro() {
+    flushSync(() => setShowIntro(false));
+    focusStepContent();
+  }
+
   if (submitted) {
     return <BookingPanel t={t} />;
+  }
+
+  if (showIntro && introScreen) {
+    return <IntroScreen t={t} introScreen={introScreen} onStart={handleStartIntro} />;
   }
 
   return (
@@ -371,12 +423,6 @@ export default function CarInsuranceForm({ steps = DEFAULT_STEPS, initialAnswers
 
         return (
           <div id="step-content" key={step.id} className={`flex flex-col gap-5 max-w-3xl ${direction === "next" ? "slide-in-right" : "slide-in-left"}`}>
-
-            {/* First-question-only intro — first-time visitors don't always
-                realize this is a form to fill out, not just page content. */}
-            {stepIdx === 0 && introText && (
-              <p className={`text-sm font-medium ${t.eyebrow}`}>{introText}</p>
-            )}
 
             {/* Eyebrow + big question */}
             <div className="flex flex-col gap-2">
